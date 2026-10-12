@@ -1,0 +1,2018 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src 'self'; img-src 'self' data: https://pbs.twimg.com https://i.ytimg.com https://img.youtube.com https://yt3.ggpht.com https://img.folo.is https://icons.folo.is https://i0.hdslb.com https://i1.hdslb.com https://i2.hdslb.com https://bpic.bilibili.com; media-src 'self' blob: https://video.twimg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.bilibili.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'self'"
+    />
+    <title>焦点空间</title>
+    <script src="./static/i18n.js?v=20260821-source-gateway-v1.1"></script>
+    <style>
+      :root {
+        --canvas: #f8fafc;
+        --surface: #fff;
+        --surface-soft: #f1f5f9;
+        --surface-strong: #e2e8f0;
+        --line: #dbe3ec;
+        --line-strong: #c8d3df;
+        --ink: #172033;
+        --muted: #607087;
+        --faint: #8a99aa;
+        --blue: #2563eb;
+        --blue-soft: #eaf1ff;
+        --teal: #0f766e;
+        --teal-soft: #e5f6f3;
+        --amber: #b45309;
+        --amber-soft: #fff4df;
+        --red: #b42318;
+        --red-soft: #fff0ee;
+        --green: #15803d;
+        --green-soft: #eaf8ee;
+        --sidebar-width: 256px;
+        --timeline-width: 380px;
+        --shadow: 0 8px 24px rgba(24, 39, 75, 0.07);
+        --radius: 7px;
+        --radius-sm: 5px;
+        --radius-lg: 10px;
+        /* Motion scale: one easing family, three durations. Non-color tokens
+           apply to both themes. */
+        --ease: cubic-bezier(0.33, 1, 0.68, 1);
+        --t-fast: 130ms;
+        --t-base: 180ms;
+        --t-slow: 260ms;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --canvas: #0f141d;
+          --surface: #171e29;
+          --surface-soft: #202a38;
+          --surface-strong: #2b3748;
+          --line: #344154;
+          --line-strong: #46556a;
+          --ink: #edf2f7;
+          --muted: #b2bfd0;
+          --faint: #8291a5;
+          --blue: #7ea8ff;
+          --blue-soft: #1d3154;
+          --teal: #54c9bd;
+          --teal-soft: #173c3b;
+          --amber: #f3bd67;
+          --amber-soft: #49351b;
+          --red: #ff8f85;
+          --red-soft: #482321;
+          --green: #6ed18e;
+          --green-soft: #1c3d2a;
+          --shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+        }
+        .app-bar, .timeline-head, .detail-panel, .field-control, .pack-item,
+        .directory-card, .settings-section, .entry, .timeline-skeleton-card,
+        .parity-modal, .source-preview-list > button { background: var(--surface); }
+        .app-bar { background: color-mix(in srgb, var(--surface) 94%, transparent); }
+        .brand-mark { border-color: var(--line-strong); background: var(--blue-soft); }
+        .primary-btn { color: #101722; }
+        .panel-toggle[aria-expanded="false"] { background: var(--surface-strong); }
+        .pack-item:hover, .directory-card:hover, .entry:hover { background: var(--surface-soft); }
+        .entry.selected { background: color-mix(in srgb, var(--blue-soft) 76%, var(--surface)); }
+        .focus-ring, button:focus-visible, input:focus-visible { outline-color: color-mix(in srgb, var(--blue) 55%, transparent); }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        background: var(--canvas);
+        color: var(--ink);
+        font: 14px/1.45 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Microsoft YaHei", sans-serif;
+        letter-spacing: 0;
+      }
+      #app[hidden] { display: none !important; }
+      .focus-bootstrap {
+        min-height: 100dvh;
+        display: grid;
+        place-content: center;
+        gap: 12px;
+        text-align: center;
+        color: var(--muted);
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:disabled {
+        cursor: wait;
+        opacity: 0.55;
+      }
+      button:focus-visible,
+      input:focus-visible {
+        outline: 3px solid rgba(37, 99, 235, 0.24);
+        outline-offset: 1px;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      .app {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .app-bar {
+        height: 56px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 0 18px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.96);
+        flex: none;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+      .brand-mark {
+        width: 28px;
+        height: 28px;
+        display: grid;
+        place-items: center;
+        border: 1px solid #b9c8db;
+        border-radius: 6px;
+        color: var(--blue);
+        background: #f2f6ff;
+      }
+      .brand-mark svg {
+        width: 17px;
+        height: 17px;
+      }
+      .brand-copy {
+        min-width: 0;
+      }
+      .brand-title {
+        font-size: 15px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .brand-subtitle {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .bar-status {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-left: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        min-width: 0;
+      }
+      .bar-status span:last-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+        flex: none;
+      }
+      .status-dot.partial {
+        background: #d97706;
+      }
+      .status-dot.bad {
+        background: var(--red);
+      }
+      .bar-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+      }
+      .panel-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        padding: 2px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: var(--surface-soft);
+      }
+      .panel-toggle {
+        width: 30px;
+        height: 28px;
+        border: 0;
+        background: transparent;
+      }
+      .panel-toggle[aria-expanded="false"] {
+        background: #fff;
+        color: var(--blue);
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+      }
+      .icon-btn,
+      .text-btn,
+      .primary-btn {
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--muted);
+        height: 32px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 0 9px;
+        transition: background-color 0.18s, color 0.18s, border-color 0.18s;
+      }
+      .icon-btn {
+        width: 32px;
+        padding: 0;
+      }
+      .icon-btn:hover,
+      .text-btn:hover {
+        background: var(--surface-soft);
+        color: var(--ink);
+      }
+      .primary-btn {
+        color: #fff;
+        background: var(--blue);
+        border-color: var(--blue);
+        font-weight: 600;
+      }
+      .primary-btn:hover {
+        background: #1d4ed8;
+        border-color: #1d4ed8;
+      }
+      .text-btn {
+        font-size: 12px;
+      }
+      .icon-btn svg,
+      .text-btn svg,
+      .primary-btn svg {
+        width: 16px;
+        height: 16px;
+        flex: none;
+      }
+      .reader-shell {
+        display: grid;
+        grid-template-columns:
+          var(--sidebar-width) 8px minmax(320px, var(--timeline-width))
+          8px minmax(0, 1fr);
+        min-height: 0;
+        flex: 1;
+        overflow: hidden;
+      }
+      .sidebar,
+      .timeline-panel,
+      .detail-panel {
+        min-width: 0;
+        min-height: 0;
+        background: var(--surface);
+      }
+      .sidebar {
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        overflow: auto;
+        padding: 15px 12px 12px;
+      }
+      .sidebar-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 5px 13px;
+      }
+      .sidebar-heading {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .sidebar-section {
+        margin-top: 17px;
+      }
+      .section-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 7px 6px;
+        color: var(--faint);
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .nav-list,
+      .source-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .nav-group-label {
+        margin: 13px 7px 5px;
+        color: var(--faint);
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .nav-group-label:first-child {
+        margin-top: 0;
+      }
+      .nav-item,
+      .source-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 8px 8px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--muted);
+        text-align: left;
+        min-height: 34px;
+      }
+      .nav-item:hover,
+      .source-item:hover {
+        background: var(--surface-soft);
+        color: var(--ink);
+      }
+      .nav-item.active,
+      .source-item.active {
+        background: var(--blue-soft);
+        color: #1d4ed8;
+        font-weight: 600;
+      }
+      .nav-item svg,
+      .source-item svg {
+        width: 16px;
+        height: 16px;
+        flex: none;
+      }
+      .nav-item .label,
+      .source-item .label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .nav-item .count,
+      .source-item .count {
+        margin-left: auto;
+        color: var(--faint);
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+      }
+      .nav-item.active .count {
+        color: var(--blue);
+      }
+      .source-item .source-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+        flex: none;
+      }
+      .source-item .source-dot.partial {
+        background: #d97706;
+      }
+      .source-item .source-dot.bad {
+        background: var(--red);
+      }
+      .source-item .source-dot.idle {
+        background: var(--faint);
+      }
+      .sidebar-bottom {
+        margin-top: auto;
+        border-top: 1px solid var(--line);
+        padding-top: 12px;
+      }
+      .hidden-chip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 7px;
+        padding: 7px 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .hidden-chip button {
+        border: 0;
+        background: transparent;
+        color: var(--blue);
+        padding: 2px 0;
+      }
+      .splitter {
+        border: 0;
+        background: var(--surface-soft);
+        padding: 0;
+        position: relative;
+        z-index: 3;
+      }
+      .splitter::after {
+        content: "";
+        position: absolute;
+        left: 3px;
+        right: 3px;
+        top: 50%;
+        height: 48px;
+        transform: translateY(-50%);
+        border-radius: 5px;
+        background: var(--line);
+      }
+      .splitter:hover::after,
+      .splitter:focus-visible::after {
+        background: var(--blue);
+      }
+      .timeline-panel {
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid var(--line);
+        overflow: hidden;
+      }
+      .timeline-head {
+        padding: 16px 18px 11px;
+        border-bottom: 1px solid var(--line);
+        flex: none;
+      }
+      .timeline-title-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .timeline-title {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.2;
+        letter-spacing: 0;
+        font-weight: 750;
+      }
+      .timeline-count {
+        color: var(--faint);
+        font-size: 12px;
+      }
+      .timeline-meta {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .search-row {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-top: 13px;
+      }
+      .search-box {
+        height: 34px;
+        min-width: 0;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--surface-soft);
+        padding: 0 9px;
+        color: var(--faint);
+      }
+      .search-box:focus-within {
+        border-color: #9ab7ed;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+      }
+      .search-box svg {
+        width: 15px;
+        height: 15px;
+        flex: none;
+      }
+      .search-box input {
+        border: 0;
+        outline: 0;
+        background: transparent;
+        min-width: 0;
+        width: 100%;
+        color: var(--ink);
+        font-size: 12px;
+      }
+      .filter-btn {
+        height: 34px;
+        width: 34px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--muted);
+        display: grid;
+        place-items: center;
+      }
+      .filter-btn:hover,
+      .filter-btn.active {
+        border-color: #9ab7ed;
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+      .filter-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+      .timeline-scroll {
+        min-height: 0;
+        overflow: auto;
+        padding: 4px 10px 32px;
+      }
+      .date-label {
+        padding: 15px 8px 7px;
+        color: var(--faint);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .entry {
+        position: relative;
+        display: grid;
+        grid-template-columns: 30px minmax(0, 1fr) 28px;
+        gap: 8px;
+        padding: 11px 7px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        transition: background-color 0.16s, border-color 0.16s;
+      }
+      .entry:hover {
+        background: #fbfdff;
+        border-color: var(--line);
+      }
+      .entry.selected {
+        background: var(--blue-soft);
+        border-color: #b6caf1;
+      }
+      .entry.read {
+        opacity: 0.68;
+      }
+      .entry-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        display: grid;
+        place-items: center;
+        background: var(--surface-soft);
+        color: var(--muted);
+        margin-top: 1px;
+      }
+      .entry-icon svg {
+        width: 15px;
+        height: 15px;
+      }
+      .entry-icon.rss {
+        color: #c2410c;
+        background: #fff1e7;
+      }
+      .entry-icon.video {
+        color: #7c3aed;
+        background: #f2ecff;
+      }
+      .entry-icon.meeting {
+        color: #0f766e;
+        background: var(--teal-soft);
+      }
+      .entry-icon.obsidian {
+        color: #475569;
+        background: #eef2f7;
+      }
+      .entry-icon.action {
+        color: #1d4ed8;
+        background: var(--blue-soft);
+      }
+      .entry-main {
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        padding: 0;
+        text-align: left;
+        color: inherit;
+      }
+      .entry-title {
+        display: block;
+        font-size: 13px;
+        font-weight: 650;
+        line-height: 1.35;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+      .entry-snippet {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.42;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+      .entry-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 6px;
+        color: var(--faint);
+        font-size: 11px;
+      }
+      .entry-meta .source-name {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .entry-meta .badge {
+        margin: 0;
+      }
+      .entry-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+      }
+      .entry-actions .icon-btn {
+        width: 27px;
+        height: 27px;
+        padding: 0;
+      }
+      .entry-actions input {
+        width: 15px;
+        height: 15px;
+        accent-color: var(--blue);
+        margin-top: 5px;
+      }
+      .entry-media {
+        width: 74px;
+        height: 48px;
+        float: right;
+        object-fit: cover;
+        border-radius: 4px;
+        margin: 0 0 4px 8px;
+        background: var(--surface-soft);
+      }
+      .entry-media-wrap {
+        position: relative;
+        float: right;
+        margin: 0 0 4px 8px;
+      }
+      .entry-media-wrap img {
+        display: block;
+        width: 74px;
+        height: 48px;
+        object-fit: cover;
+        border-radius: 4px;
+        background: var(--surface-soft);
+      }
+      .play-mark {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: rgba(15, 23, 42, 0.76);
+        color: #fff;
+      }
+      .play-mark svg {
+        width: 11px;
+        height: 11px;
+        margin-left: 1px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 19px;
+        padding: 1px 6px;
+        border-radius: 4px;
+        background: var(--surface-soft);
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.2;
+        white-space: nowrap;
+      }
+      .badge.blue {
+        background: var(--blue-soft);
+        color: #1d4ed8;
+      }
+      .badge.teal {
+        background: var(--teal-soft);
+        color: var(--teal);
+      }
+      .badge.amber {
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+      .badge.red {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+      .badge.green {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+      .starred {
+        color: #d97706 !important;
+      }
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 260px;
+        padding: 28px;
+        color: var(--muted);
+        text-align: center;
+      }
+      .empty-state svg {
+        width: 30px;
+        height: 30px;
+        color: var(--faint);
+        margin-bottom: 10px;
+      }
+      .empty-state strong {
+        font-size: 14px;
+        color: var(--ink);
+      }
+      .empty-state p {
+        margin: 5px 0 0;
+        font-size: 12px;
+      }
+      .detail-panel {
+        overflow: auto;
+        padding: 18px 20px 34px;
+      }
+      .detail-top {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 15px;
+      }
+      .detail-top-copy {
+        min-width: 0;
+        flex: 1;
+      }
+      .detail-kicker {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 11px;
+        margin-bottom: 7px;
+      }
+      .detail-title {
+        margin: 0;
+        font-size: 21px;
+        line-height: 1.3;
+        font-weight: 750;
+        letter-spacing: 0;
+      }
+      .detail-subtitle {
+        margin: 7px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .detail-tools {
+        display: flex;
+        gap: 4px;
+        flex: none;
+      }
+      .detail-body {
+        padding-top: 16px;
+      }
+      .detail-body p {
+        margin: 0 0 12px;
+      }
+      .detail-body h1,
+      .detail-body h2,
+      .detail-body h3 {
+        font-size: 16px;
+        line-height: 1.35;
+        margin: 18px 0 8px;
+      }
+      .detail-body ul,
+      .detail-body ol {
+        padding-left: 20px;
+      }
+      .detail-body a {
+        color: var(--blue);
+        text-decoration: none;
+      }
+      .detail-body a:hover {
+        text-decoration: underline;
+      }
+      .detail-body blockquote {
+        margin: 10px 0;
+        padding: 9px 12px;
+        border-left: 3px solid #9ab7ed;
+        background: var(--surface-soft);
+        color: var(--muted);
+      }
+      .obsidian-note-content img.obsidian-note-image {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 12px 0;
+        border-radius: 8px;
+        background: var(--surface-muted, #f3f4f6);
+      }
+      .detail-media {
+        width: 100%;
+        max-height: 390px;
+        object-fit: contain;
+        background: #0f172a;
+        border-radius: 6px;
+        margin: 0 0 14px;
+      }
+      .detail-cover {
+        width: 100%;
+        max-height: 260px;
+        object-fit: cover;
+        border-radius: 6px;
+        margin: 0 0 14px;
+      }
+      .source-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 12px;
+      }
+      .source-line span:first-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .source-line .health {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        color: var(--muted);
+      }
+      .health-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+      }
+      .health-dot.partial {
+        background: #d97706;
+      }
+      .health-dot.bad {
+        background: var(--red);
+      }
+      .overview-default {
+        height: 100%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 40px 24px;
+        text-align: center;
+        box-sizing: border-box;
+      }
+      .overview-default-mark {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        margin-bottom: 8px;
+      }
+      .overview-default h2 {
+        margin: 0;
+        font-size: 17px;
+        line-height: 1.3;
+      }
+      .overview-default p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      .overview-default-links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .overview-default-link {
+        display: inline-flex;
+        align-items: center;
+        height: 32px;
+        padding: 0 13px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .overview-default-link:hover {
+        border-color: var(--blue, #2563eb);
+        color: var(--ink, #1f2937);
+      }
+      .overview-default-link:focus-visible {
+        outline: 1px solid var(--blue, #2563eb);
+        outline-offset: 1px;
+      }
+      .overview-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 15px;
+      }
+      .overview-head h2 {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.25;
+      }
+      .overview-head p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .overview-head-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .mobile-detail-close {
+        display: none;
+      }
+      .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        padding: 10px 0 15px;
+      }
+      .overview-pipeline {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .overview-pipeline strong {
+        color: var(--ink);
+        font-size: 14px;
+      }
+      .overview-grid .stat {
+        width: 100%;
+        border-color: var(--line);
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 18px;
+        align-items: center;
+        gap: 6px;
+      }
+      .overview-grid .stat:hover {
+        border-color: #aebed1;
+        background: #fff;
+      }
+      .overview-grid .stat:focus-visible {
+        outline: 3px solid rgba(37, 99, 235, 0.18);
+      }
+      .stat-arrow {
+        display: grid;
+        place-items: center;
+        color: var(--faint);
+      }
+      .stat-arrow svg {
+        width: 14px;
+        height: 14px;
+      }
+      .overview-grid .stat:hover .stat-arrow {
+        color: var(--blue);
+      }
+      .stat {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 10px;
+        background: var(--surface-soft);
+        min-width: 0;
+      }
+      .stat-value {
+        display: block;
+        font-size: 22px;
+        line-height: 1;
+        font-weight: 750;
+        font-variant-numeric: tabular-nums;
+      }
+      .stat-label {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .overview-module {
+        border-top: 1px solid var(--line);
+        padding: 14px 0;
+      }
+      .overview-module[data-priority="primary"] {
+        border-top-color: var(--line-strong);
+      }
+      .module-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .module-title-row h3 {
+        margin: 0;
+        font-size: 13px;
+      }
+      .module-title-row .text-btn {
+        height: 26px;
+        padding: 0 5px;
+        font-size: 11px;
+      }
+      .module-title-row [data-hide-module] {
+        display: none;
+      }
+      .layout-editing .module-title-row [data-hide-module] {
+        display: inline-flex;
+      }
+      .overview-list {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .overview-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        width: 100%;
+        padding: 8px;
+        border: 0;
+        border-radius: 5px;
+        background: var(--surface-soft);
+        color: inherit;
+        text-align: left;
+        min-width: 0;
+      }
+      button.overview-item:hover {
+        background: #e9eef5;
+      }
+      .overview-item .marker {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--blue);
+        margin-top: 6px;
+        flex: none;
+      }
+      .overview-item-copy {
+        min-width: 0;
+      }
+      .overview-item strong {
+        display: block;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+      .overview-item p {
+        margin: 3px 0 0;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.35;
+      }
+      .overview-item .mini-meta {
+        margin-top: 5px;
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+      }
+      .overview-item.done strong {
+        text-decoration: line-through;
+        color: var(--muted);
+      }
+      .overview-action {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .overview-action input {
+        margin-top: 2px;
+        accent-color: var(--blue);
+      }
+      .overview-action .overview-item-copy {
+        flex: 1;
+      }
+      .overview-action .icon-btn {
+        width: 25px;
+        height: 25px;
+        padding: 0;
+      }
+      .source-health {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .source-empty {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .overview-empty {
+        margin-top: 14px;
+        border-top: 1px solid var(--line);
+        padding: 22px 0 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .overview-empty strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--ink);
+        font-size: 13px;
+      }
+      .overview-subsection-label {
+        margin: 11px 0 6px;
+        color: var(--faint);
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .overview-subsection-label:first-child {
+        margin-top: 0;
+      }
+      .error-bar {
+        position: fixed;
+        left: 50%;
+        bottom: 18px;
+        z-index: 20;
+        transform: translateX(-50%);
+        max-width: min(560px, calc(100% - 28px));
+        padding: 10px 14px;
+        border: 1px solid #f2b8b1;
+        border-radius: 6px;
+        background: #fff8f7;
+        color: var(--red);
+        box-shadow: var(--shadow);
+        font-size: 12px;
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 18px;
+        z-index: 21;
+        transform: translateX(-50%);
+        padding: 10px 14px;
+        border: 1px solid color-mix(in srgb, var(--green) 34%, var(--line));
+        border-radius: 6px;
+        background: var(--green-soft);
+        color: var(--green);
+        box-shadow: var(--shadow);
+        font-size: 12px;
+      }
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        background: rgba(15, 23, 42, 0.38);
+      }
+      .modal-backdrop[hidden],
+      .error-bar[hidden],
+      .toast[hidden] {
+        display: none;
+      }
+      .modal {
+        width: min(520px, 100%);
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2);
+        padding: 20px;
+      }
+      .modal-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .modal-head h2 {
+        margin: 0;
+        font-size: 18px;
+      }
+      .modal-head p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .modal-form {
+        margin-top: 18px;
+      }
+      .modal-form label {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .modal-form input {
+        width: 100%;
+        height: 38px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 0 10px;
+        color: var(--ink);
+        background: #fff;
+      }
+      .modal-form input:focus {
+        border-color: #8eace3;
+        outline: 0;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+      .modal-error {
+        min-height: 18px;
+        margin-top: 7px;
+        color: var(--red);
+        font-size: 11px;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 7px;
+        margin-top: 12px;
+      }
+      .modal-footnote {
+        margin: 15px 0 0;
+        color: var(--faint);
+        font-size: 11px;
+      }
+      .layout-editing .overview-module {
+        outline: 1px dashed #9ab7ed;
+        outline-offset: 3px;
+      }
+      .layout-editing .splitter {
+        background: #e8f0ff;
+      }
+      @media (max-width: 1100px) {
+        :root {
+          --sidebar-width: 220px;
+          --timeline-width: 390px;
+        }
+        .app-bar {
+          padding: 0 12px;
+        }
+        .brand-subtitle,
+        .bar-status span:last-child {
+          display: none;
+        }
+        .detail-panel {
+          padding-left: 15px;
+          padding-right: 15px;
+        }
+        .overview-grid .stat {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .stat-arrow {
+          display: none;
+        }
+        .stat-label {
+          white-space: normal;
+          line-height: 1.25;
+        }
+      }
+      @media (max-width: 900px) {
+        .panel-controls {
+          display: none;
+        }
+        .reader-shell {
+          grid-template-columns: var(--sidebar-width) 8px minmax(0, 1fr);
+        }
+        .timeline-panel {
+          border-right: 0;
+        }
+        .detail-panel {
+          display: none;
+          position: fixed;
+          z-index: 10;
+          right: 0;
+          top: 56px;
+          bottom: 0;
+          width: min(520px, calc(100% - 20px));
+          border-left: 1px solid var(--line);
+          box-shadow: -12px 0 30px rgba(15, 23, 42, 0.12);
+        }
+        body.detail-open .detail-panel {
+          display: block;
+        }
+        .timeline-head {
+          padding-left: 14px;
+          padding-right: 14px;
+        }
+        .mobile-detail-close {
+          display: inline-flex;
+        }
+        .timeline-title {
+          font-size: 18px;
+        }
+      }
+      @media (max-width: 640px) {
+        .app-bar {
+          height: 52px;
+          gap: 8px;
+        }
+        .brand-title {
+          font-size: 14px;
+        }
+        .bar-actions .text-btn span {
+          display: none;
+        }
+        .reader-shell {
+          display: block;
+          overflow: auto;
+        }
+        .sidebar {
+          display: none;
+        }
+        .timeline-panel {
+          height: calc(100vh - 52px);
+          border: 0;
+        }
+        .reader-shell > .splitter {
+          display: none;
+        }
+        .timeline-head {
+          padding: 12px 12px 9px;
+        }
+        .timeline-scroll {
+          padding-left: 5px;
+          padding-right: 5px;
+        }
+        .detail-panel {
+          top: 52px;
+          width: 100%;
+          box-shadow: none;
+        }
+        .detail-panel .detail-top {
+          padding-top: 2px;
+        }
+        .detail-title {
+          font-size: 19px;
+        }
+        .entry {
+          padding-left: 6px;
+          padding-right: 4px;
+        }
+        .entry-media-wrap,
+        .entry-media {
+          width: 64px;
+        }
+        .entry-media-wrap img {
+          width: 64px;
+          height: 43px;
+        }
+        .overview-grid {
+          gap: 6px;
+        }
+        .stat {
+          padding: 9px 7px;
+        }
+        .stat-value {
+          font-size: 19px;
+        }
+        .search-row {
+          gap: 5px;
+        }
+        .search-box {
+          height: 32px;
+        }
+        .filter-btn {
+          height: 32px;
+          width: 32px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+      .catalog {
+        margin-top: 18px;
+        border-top: 1px solid var(--line);
+        padding-top: 14px;
+      }
+      .catalog-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+      }
+      .catalog-subtitle {
+        margin: 4px 0 10px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .catalog-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 270px;
+        overflow: auto;
+      }
+      .catalog-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 9px 0;
+        border-top: 1px solid var(--line);
+      }
+      .catalog-item:first-child {
+        border-top: 0;
+      }
+      .catalog-copy {
+        min-width: 0;
+        flex: 1;
+      }
+      .catalog-copy strong {
+        display: block;
+        font-size: 12px;
+      }
+      .catalog-copy p {
+        margin: 3px 0 0;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.35;
+      }
+      .catalog-meta {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 5px;
+        flex-wrap: wrap;
+      }
+      .catalog-actions {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        flex: none;
+      }
+      .catalog-actions .icon-btn {
+        width: 28px;
+        height: 28px;
+      }
+      .recording-player {
+        width: 100%;
+        margin: 0 0 14px;
+      }
+      .recording-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin: 0 0 12px;
+      }
+      .recording-analysis {
+        border-top: 1px solid var(--line);
+        padding-top: 13px;
+        margin-top: 15px;
+      }
+      .recording-analysis h3 {
+        margin: 0 0 7px;
+        font-size: 13px;
+      }
+      .transcript {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .transcript-segment {
+        display: grid;
+        grid-template-columns: 62px minmax(0, 1fr);
+        gap: 8px;
+        width: 100%;
+        border: 0;
+        border-radius: 5px;
+        background: var(--surface-soft);
+        padding: 8px;
+        text-align: left;
+        color: var(--ink);
+      }
+      .transcript-segment:hover {
+        background: var(--blue-soft);
+      }
+      .transcript-time {
+        color: var(--blue);
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+      }
+      .transcript-text {
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .recording-summary {
+        white-space: pre-wrap;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .catalog-empty {
+        padding: 12px 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      @media (prefers-color-scheme: dark) {
+        .app-bar,
+        .timeline-head,
+        .field-control,
+        .workflow-field textarea,
+        .workflow-field input,
+        .workflow-field select,
+        .article-ai-overview-action {
+          background: var(--surface);
+        }
+        .panel-toggle[aria-expanded="false"] { background: var(--surface-strong); }
+        .brand-mark { border-color: var(--line-strong); background: var(--blue-soft); }
+        .primary-btn { color: #101722; }
+        .modal-backdrop { background: rgba(0, 0, 0, 0.58); }
+      }
+    </style>
+    <link rel="stylesheet" href="./static/reader-parity.css?v=20260928-flicker-fix" />
+  </head>
+  <body>
+    <div class="focus-bootstrap" id="focus-bootstrap" role="status" aria-live="polite">
+      <span id="focus-bootstrap-message">正在打开焦点空间…</span>
+      <button id="focus-bootstrap-retry" type="button" hidden>重新加载</button>
+    </div>
+    <div class="app" id="app" hidden>
+      <header class="app-bar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path d="M5 5.5h14v13H5z" />
+              <path d="M8 9h8M8 12h6M8 15h4" /></svg
+          ></span>
+          <div class="brand-copy">
+            <div class="brand-title">焦点空间</div>
+            <div class="brand-subtitle">目标、证据、行动与决策</div>
+          </div>
+        </div>
+        <div class="bar-status" id="bar-status">
+          <i class="status-dot"></i><span>正在读取来源</span>
+        </div>
+        <div class="bar-actions">
+          <div class="panel-controls" role="group" aria-label="工作区面板">
+            <button
+              class="icon-btn panel-toggle"
+              id="sidebar-collapse-handle"
+              type="button"
+              aria-controls="sidebar"
+              aria-expanded="true"
+              aria-label="收起导航"
+              title="收起导航"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path d="M4 5h16v14H4zM9 5v14" />
+                <path d="m7 10-2 2 2 2" />
+              </svg>
+            </button>
+            <button
+              class="icon-btn panel-toggle"
+              id="timeline-collapse-handle"
+              type="button"
+              aria-controls="timeline-panel"
+              aria-expanded="true"
+              aria-label="收起优先队列"
+              title="收起优先队列"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path d="M4 5h16v14H4zM15 5v14" />
+                <path d="m17 10 2 2-2 2" />
+              </svg>
+            </button>
+          </div>
+          <button
+            class="text-btn"
+            id="discover"
+            type="button"
+            title="添加公开 RSS 或 Atom 来源"
+          >
+            <span>添加来源</span
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+          <button
+            class="icon-btn"
+            id="refresh"
+            type="button"
+            aria-label="刷新内容"
+            title="刷新内容"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path d="M20 11a8 8 0 0 0-14.7-4L4 9" />
+              <path d="M4 5v4h4M4 13a8 8 0 0 0 14.7 4L20 15" />
+              <path d="M20 19v-4h-4" />
+            </svg>
+          </button>
+        </div>
+      </header>
+      <div class="reader-shell" id="reader-shell">
+        <aside class="sidebar" id="sidebar" aria-label="内容导航">
+          <div class="sidebar-head">
+            <span class="sidebar-heading">导航</span
+            ><button
+              class="icon-btn"
+              id="sidebar-add"
+              type="button"
+              aria-label="添加来源"
+              title="添加来源"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+          </div>
+          <nav class="nav-list" id="view-nav" aria-label="工作区导航">
+            <div class="nav-group-label">焦点空间</div>
+            <button class="nav-item active" type="button" data-view="today">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path d="M4 5h16v14H4z" />
+                <path d="M8 9h8M8 13h5M8 17h3" /></svg
+              ><span class="label">我的焦点</span
+              ><span class="count" data-count="today">0</span>
+            </button>
+            <button class="nav-item" type="button" data-view="decision">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path d="M12 4v16M12 8 6 5M12 8l6-3M12 16l-6 3M12 16l6 3" />
+                <circle cx="12" cy="4" r="2" />
+                <circle cx="6" cy="5" r="2" />
+                <circle cx="18" cy="5" r="2" /></svg
+              ><span class="label">待决策</span
+              ><span class="count" data-count="decision">0</span>
+            </button>
+            <button class="nav-item" type="button" data-view="action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path d="M5 6h14M5 12h14M5 18h9" />
+                <path d="m17 16 2 2 3-4" /></svg
+              ><span class="label">行动</span
+              ><span class="count" data-count="action">0</span>
+            </button>
+            <button class="nav-item" type="button" data-view="signal">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path d="M5 17V9M9 17V5M13 17v-3M17 17V7M21 17v-5" /></svg
+              ><span class="label">风险与信号</span
+              ><span class="count" data-count="signal">0</span>
+            </button>
+            <div class="nav-group-label">信息库</div>
+            <button class="nav-item" type="button" data-view="all">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path d="M4 5h16v14H4z" />
+                <path d="M8 9h8M8 13h5" /></svg
+              ><span class="label">全部内容</span
+              ><span class="count" data-count="all">0</span>
+            </button>
+            <button class="nav-item" type="button" data-view="rss">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path
+                  d="M5 5a14 14 0 0 1 14 14M5 11a8 8 0 0 1 8 8M6 18h.01"
+                /></svg
+              ><span class="label">订阅文章</span
+              ><span class="count" data-count="rss">0</span>
+            </button>
+            <button class="nav-item" type="button" data-view="video">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <rect x="3.5" y="5.5" width="17" height="13" rx="3" />
+                <path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none" /></svg
+              ><span class="label">视频</span
+              ><span class="count" data-count="video">0</span>
+            </button>
+            <button class="nav-item" type="button" data-view="picture">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+                <circle cx="9" cy="9.5" r="1.6" />
+                <path d="m5.5 17 4.3-4.3a1.4 1.4 0 0 1 2 0l3 3m1.3-1.6.9-.9a1.4 1.4 0 0 1 2 0l1.6 1.6" /></svg
+              ><span class="label">图片</span
+              ><span class="count" data-count="picture">0</span>
+            </button>
+            <button class="nav-item" type="button" data-view="meeting">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <rect x="4" y="6" width="16" height="12" rx="2" />
+                <path d="M8 6V4M16 6V4M8 11h8M8 14h5" /></svg
+              ><span class="label">会议与录音</span
+              ><span class="count" data-count="meeting">0</span>
+            </button>
+            <button class="nav-item" type="button" data-view="obsidian">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path d="M6 4h9l3 3v13H6z" />
+                <path d="M15 4v4h4M9 12h6M9 15h5" /></svg
+              ><span class="label">Obsidian</span
+              ><span class="count" data-count="obsidian">0</span>
+            </button>
+          </nav>
+          <div class="sidebar-section">
+            <div class="section-label">
+              <span>来源</span><span id="source-count">0</span>
+            </div>
+            <div class="source-list" id="source-list"></div>
+          </div>
+          <div class="sidebar-section">
+            <div class="section-label"><span>快捷筛选</span></div>
+            <div class="nav-list">
+              <button class="nav-item" type="button" data-view="starred">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                >
+                  <path
+                    d="m12 4 2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z"
+                  /></svg
+                ><span class="label">收藏</span
+                ><span class="count" data-count="starred">0</span>
+              </button>
+            </div>
+          </div>
+          <div class="sidebar-bottom" id="hidden-area" hidden>
+            <div class="section-label"><span>已隐藏模块</span></div>
+            <div id="hidden-list"></div>
+          </div>
+        </aside>
+        <div class="splitter-slot" id="sidebar-splitter-slot">
+          <button
+            class="splitter"
+            id="sidebar-splitter"
+            type="button"
+            aria-label="调整导航栏宽度"
+            title="调整导航栏宽度"
+          ></button>
+        </div>
+        <main class="timeline-panel" id="timeline-panel">
+          <div class="timeline-head">
+            <div class="timeline-title-row">
+              <h1 class="timeline-title" id="timeline-title">优先队列</h1>
+              <span class="timeline-count" id="timeline-count">0</span>
+            </div>
+            <div class="timeline-meta" id="timeline-meta">
+              只显示待决策、待行动和关键风险
+            </div>
+            <div class="search-row">
+              <label class="search-box"
+                ><svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                >
+                  <circle cx="10.8" cy="10.8" r="6.3" />
+                  <path d="m16 16 4 4" /></svg
+                ><span class="sr-only">搜索内容</span
+                ><input
+                  id="search"
+                  type="search"
+                  placeholder="搜索标题、来源或摘要"
+                  autocomplete="off" /></label
+              ><button
+                class="filter-btn"
+                id="clear-filter"
+                type="button"
+                aria-label="清除筛选"
+                title="清除筛选"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                >
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="timeline-scroll" id="timeline" aria-live="polite" aria-busy="true">
+            <div class="timeline-loading timeline-loading-initial" data-timeline-loading role="status" aria-live="polite" aria-busy="true" aria-label="正在读取内容">
+              <div class="timeline-loading-status"><span class="timeline-loading-spinner" aria-hidden="true"></span><strong>正在读取内容</strong><span>正在准备你的信息流</span></div>
+              <div class="timeline-loading-cards">
+                <article class="timeline-skeleton-card is-article" aria-hidden="true"><span class="timeline-skeleton-line timeline-skeleton-avatar"></span><div class="timeline-skeleton-copy"><div class="timeline-skeleton-head"><span class="timeline-skeleton-line"></span><span class="timeline-skeleton-line"></span></div><span class="timeline-skeleton-line is-wide"></span><span class="timeline-skeleton-line is-medium"></span><span class="timeline-skeleton-line timeline-skeleton-meta"></span></div></article>
+                <article class="timeline-skeleton-card is-social" aria-hidden="true"><span class="timeline-skeleton-line timeline-skeleton-avatar"></span><div class="timeline-skeleton-copy"><div class="timeline-skeleton-head"><span class="timeline-skeleton-line"></span><span class="timeline-skeleton-line"></span></div><span class="timeline-skeleton-line is-wide"></span><span class="timeline-skeleton-line is-short"></span><span class="timeline-skeleton-line timeline-skeleton-meta"></span></div></article>
+                <article class="timeline-skeleton-card is-video" aria-hidden="true"><span class="timeline-skeleton-media"></span><div class="timeline-skeleton-video-copy"><span class="timeline-skeleton-line"></span><span class="timeline-skeleton-line is-medium"></span><span class="timeline-skeleton-line timeline-skeleton-meta"></span></div></article>
+              </div>
+            </div>
+          </div>
+        </main>
+        <div class="splitter-slot" id="timeline-splitter-slot">
+          <button
+            class="splitter"
+            id="timeline-splitter"
+            type="button"
+            aria-label="调整时间线宽度"
+            title="调整时间线宽度"
+          ></button>
+        </div>
+        <aside
+          class="detail-panel"
+          id="detail-panel"
+          aria-label="内容详情"
+        ></aside>
+      </div>
+    </div>
+    <div class="error-bar" id="error-bar" role="alert" hidden></div>
+    <div class="toast" id="toast" role="status" hidden></div>
+    <div class="modal-backdrop" id="discover-modal" hidden>
+      <section
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="discover-title"
+      >
+        <div class="modal-head">
+          <div>
+            <h2 id="discover-title">发现来源</h2>
+            <p>订阅公开内容，会议录音由当前 Agent 自动维护</p>
+          </div>
+          <button
+            class="icon-btn"
+            id="close-discover"
+            type="button"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </button>
+        </div>
+        <div class="catalog">
+          <h3 class="catalog-title">推荐来源</h3>
+          <p class="catalog-subtitle">
+            点击加号即可订阅或退订；同步由当前设备应用处理。
+          </p>
+          <div class="catalog-list" id="source-catalog">
+            <div class="catalog-empty">正在读取来源目录</div>
+          </div>
+        </div>
+        <form class="modal-form" id="discover-form">
+          <label for="feed-url">添加其他公开 RSS / Atom</label
+          ><input
+            id="feed-url"
+            type="url"
+            inputmode="url"
+            placeholder="https://example.com/feed.xml"
+            maxlength="1000"
+            required
+          />
+          <div class="modal-error" id="discover-error" aria-live="polite"></div>
+          <div class="modal-actions">
+            <button class="text-btn" id="cancel-discover" type="button">
+              关闭</button
+            ><button class="primary-btn" type="submit">
+              <span>添加并首次同步</span
+              ><svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path d="M5 12h13M13 6l6 6-6 6" />
+              </svg>
+            </button>
+          </div>
+        </form>
+        <p class="modal-footnote">
+          自定义地址由当前设备应用验证；无法由应用验证时，可在 Chat 中让 Agent
+          处理。
+        </p>
+      </section>
+    </div>
+    <script src="./static/js/focus-app.js?v=20260928-overview-default"></script>
+    <script src="./static/vendor/cytoscape.min.js?v=3.34.3"></script>
+    <script src="./static/reader-parity.js?v=20260928-graph-tidy4"></script>
+    <script src="./static/reader-bootstrap.js?v=20260911-first-paint"></script>
+  </body>
+</html>

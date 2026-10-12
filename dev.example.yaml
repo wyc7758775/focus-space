@@ -1,0 +1,13 @@
+# 本地开发配置模板 —— 复制为 dev.yaml 并填真实值（dev.yaml 已 gitignore，永不提交）
+# 用法: cp dev.example.yaml dev.yaml && ./scripts/dev/up.sh
+
+# 板子 SSH 目标（host 或 user@host）。板子 IP 属环境信息，别提交进仓库
+board_host: root@192.168.1.100
+
+# 本地服务监听地址（浏览器打开 http://127.0.0.1:18101）
+listen_addr: 127.0.0.1:18101
+
+# SSH 同端口转发的板上端口：local-server(device-data/source-gateway) 与 gateway(ai-proxy)
+# 板上 env 里抄来的 base URL 指向 127.0.0.1:19090 / 127.0.0.1:9090，同端口转发后原样可用
+tunnel_local_server: 19090
+tunnel_gateway: 9090

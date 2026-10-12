@@ -1,0 +1,1 @@
+ALTER TABLE news ADD COLUMN source_type TEXT NOT NULL DEFAULT '';

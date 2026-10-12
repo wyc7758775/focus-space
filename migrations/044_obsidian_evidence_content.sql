@@ -1,0 +1,2 @@
+ALTER TABLE evidence ADD COLUMN content TEXT NOT NULL DEFAULT '';
+ALTER TABLE evidence ADD COLUMN content_format TEXT NOT NULL DEFAULT '';

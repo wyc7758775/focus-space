@@ -1,0 +1,4 @@
+-- Columns are added by reconcileSourceGatewaySchema, which runs before and
+-- after numbered migrations so partially upgraded development databases are
+-- repaired without duplicate-column failures. This migration records the
+-- schema version for installs that already have the idempotent repair path.
