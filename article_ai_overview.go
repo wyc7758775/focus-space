@@ -215,6 +215,9 @@ func processArticleOverviewJob(parent context.Context, job articleOverviewJob) e
 	}
 	draft, err := parseArticleOverviewDraft(raw)
 	if err != nil {
+		if usesPlatformArticleAI() {
+			return finishArticleOverviewJob(job, &platformAIError{code: "ai_invalid_response"})
+		}
 		return finishArticleOverviewJob(job, errors.New("article_overview_invalid_response"))
 	}
 
@@ -423,6 +426,10 @@ func articleOverviewErrorRetryable(err error) bool {
 	if err == nil {
 		return false
 	}
+	var platformFailure *platformAIError
+	if errors.As(err, &platformFailure) {
+		return false
+	}
 	message := strings.ToLower(err.Error())
 	return strings.Contains(message, "ai_proxy_retryable") ||
 		strings.Contains(message, "deadline exceeded") ||
@@ -556,6 +563,9 @@ func articleOverviewContent(source articleOverviewSource) string {
 }
 
 func requestArticleOverviewAI(parent context.Context, payload map[string]any, job articleOverviewJob) ([]byte, error) {
+	if usesPlatformArticleAI() {
+		return requestPlatformArticleAI(parent, payload)
+	}
 	endpoint, runtimeConfigured := configuredArticleOverviewProxyEndpoint()
 	parsed, err := url.Parse(endpoint)
 	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" || !isLoopbackHost(parsed.Hostname()) || runtimeConfigured && parsed.Path != articleOverviewProxyPath {
@@ -803,6 +813,10 @@ func failedArticleOverview(entryID, contentHash string, cause error, attempt int
 func overviewErrorCode(err error) string {
 	if err == nil {
 		return "generation_failed"
+	}
+	var platformFailure *platformAIError
+	if errors.As(err, &platformFailure) {
+		return platformFailure.code
 	}
 	message := strings.ToLower(err.Error())
 	switch {

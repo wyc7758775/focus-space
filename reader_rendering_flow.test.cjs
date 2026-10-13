@@ -13,6 +13,28 @@ function sourceFunction(name) {
   return match[0];
 }
 
+test("platform AI failure flow keeps reading and explicit retry available", () => {
+  for (const locale of ["zh", "en"]) {
+    const context = vm.createContext({
+      text: (value) => String(value ?? ""),
+      esc: (value) => String(value ?? ""),
+      icon: () => "",
+      readerFocusCopy: (zh, en) => locale === "zh" ? zh : en,
+      articleProjectionLooksBlocked: () => false,
+      parity: { articleOverviewLoading: new Set() },
+    });
+    vm.runInContext(["articleOverviewKey", "articleAIOverviewErrorMessage", "articleAIOverviewMarkup"].map(sourceFunction).join("\n"), context);
+    for (const code of ["ai_busy", "ai_credits_insufficient", "ai_timeout", "ai_input_too_large", "ai_forbidden", "ai_invalid_response"]) {
+      const html = context.articleAIOverviewMarkup({ id: "entry", ai_overview: { status: "failed", error_code: code } });
+      assert.match(html, /is-failed/);
+      assert.match(html, /data-retry-article-ai-overview="entry"/);
+      assert.match(html, locale === "zh" ? /不影响阅读原文/ : /Reading the original article is unaffected/);
+      assert.doesNotMatch(html, /aria-busy="true"/);
+    }
+    assert.match(context.articleAIOverviewErrorMessage("ai_timeout"), locale === "zh" ? /未自动重试/ : /not automatically retried/);
+  }
+});
+
 test("article projection flow selects the HTML renderer across supported response shapes", () => {
   const context = vm.createContext({
     URL,

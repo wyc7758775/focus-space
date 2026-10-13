@@ -1,0 +1,43 @@
+name: Focus Space application package
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/focus-space-app']
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        arch: [arm64, amd64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test integration boundaries
+        run: |
+          go test . ./internal/bridges -run 'TestPlatformAI|TestProductionStaticAssets|TestAppData|TestDeviceDataBridge' -count=1
+          python -m pip install 'pytest>=8,<9'
+          python -m pytest scripts/test_zapp.py -q
+      - name: Compile production source and package
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: '0'
+        run: |
+          python scripts/zapp.py stage --output dist/source
+          (cd dist/source && go build -trimpath -o ../app ./src)
+          python scripts/zapp.py pack --source dist/source --binary dist/app --revision "$GITHUB_SHA" --output "dist/focus-space-linux-${GOARCH}.zapp"
+          python -c 'from pathlib import Path; assert all(p.stat().st_size <= 32 << 20 for p in Path("dist").glob("*.zapp")), "package exceeds gateway upload limit"'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: focus-space-linux-${{ matrix.arch }}
+          path: dist/*.zapp
+          if-no-files-found: error

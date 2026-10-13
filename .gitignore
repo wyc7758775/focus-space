@@ -13,3 +13,6 @@ plaud-dev
 
 # 构建产物目录
 bin/
+dist/
+*.zapp
+__pycache__/

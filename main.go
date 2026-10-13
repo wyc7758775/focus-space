@@ -250,13 +250,13 @@ type FeedSource struct {
 	// unsubscribed (a feed_subscriptions row exists with enabled=0).  It is
 	// the honest input for an "已退订" list: never-subscribed catalog rows
 	// must not show up there.
-	FormerlySubscribed bool `json:"formerly_subscribed,omitempty"`
-	Status      string `json:"status"`
-	RecordsSeen int    `json:"records_seen"`
-	RecordsUsed int    `json:"records_used"`
-	EntryCount  int    `json:"entry_count"`
-	UnreadCount int    `json:"unread_count"`
-	LastSyncAt  string `json:"last_sync_at"`
+	FormerlySubscribed bool   `json:"formerly_subscribed,omitempty"`
+	Status             string `json:"status"`
+	RecordsSeen        int    `json:"records_seen"`
+	RecordsUsed        int    `json:"records_used"`
+	EntryCount         int    `json:"entry_count"`
+	UnreadCount        int    `json:"unread_count"`
+	LastSyncAt         string `json:"last_sync_at"`
 	// GatewayLastSuccessAt is the server-owned freshness watermark. It is
 	// separate from LastSyncAt, which records the last local projection write.
 	GatewayLastSuccessAt string   `json:"last_success_at,omitempty"`
@@ -408,7 +408,7 @@ type Dashboard struct {
 	// VideoEntries is an optional aggregate for the Folo-style Videos view.
 	// Older clients ignore it while newer clients can render the full count
 	// without treating the dashboard's first 100 news rows as the total.
-	VideoEntries       int                   `json:"video_entries"`
+	VideoEntries int `json:"video_entries"`
 	// PictureEntries is the same optional aggregate for the picture wall.
 	PictureEntries     int                   `json:"picture_entries"`
 	UnreadEntries      int                   `json:"unread_entries"`
@@ -908,29 +908,6 @@ func migrationVersion(name string) (int, error) {
 		return 0, errors.New("迁移版本号不合法")
 	}
 	return version, nil
-}
-
-// staticAssetsFS 返回 /static/ 与 index.html 的文件源。生产路径是打进二进制的
-// embed FS；本地开发时设置 ZAPP_STATIC_DIR 指向本仓库根目录，静态资源直接从
-// 磁盘读取，改 JS/CSS 后刷新浏览器即可生效，无需重新编译。no-cache 头在两种
-// 模式下都保留，避免磁盘模式与 embed 版本混用。
-func staticAssetsFS() (fs.FS, error) {
-	if dir := strings.TrimSpace(os.Getenv("ZAPP_STATIC_DIR")); dir != "" {
-		return fs.Sub(os.DirFS(dir), "static")
-	}
-	return fs.Sub(appFS, "static")
-}
-
-func validateStaticDirOverride() error {
-	dir := strings.TrimSpace(os.Getenv("ZAPP_STATIC_DIR"))
-	if dir == "" {
-		return nil
-	}
-	if _, err := os.Stat(filepath.Join(dir, "static", "index.html")); err != nil {
-		return fmt.Errorf("ZAPP_STATIC_DIR 无效（应指向含 static/ 的仓库根目录）: %w", err)
-	}
-	log.Printf("开发模式: 静态资源从磁盘读取 %s", dir)
-	return nil
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {

@@ -1,0 +1,248 @@
+{
+  "name": "plaud-action-dashboard",
+  "purpose": "把与当前目标或决策有关的会议、文章和笔记压缩成有证据、可排序、可行动的焦点空间。",
+  "capabilities": {
+    "web": true,
+    "db": "sqlite",
+    "ai": {},
+    "device_data": [
+      "device_meetings_read",
+      "obsidian_read",
+      "focus_decision_turn",
+      "focus_chat_media_read",
+      "source_gateway_read"
+    ]
+  },
+  "operations": [
+    {
+      "name": "action.feedback",
+      "mode": "mutation"
+    },
+    {
+      "name": "context.confirm",
+      "mode": "mutation"
+    },
+    {
+      "name": "context.query",
+      "mode": "read"
+    },
+    {
+      "name": "context.remove",
+      "mode": "mutation"
+    },
+    {
+      "name": "dashboard.get",
+      "mode": "read"
+    },
+    {
+      "name": "dashboard.write",
+      "mode": "mutation"
+    },
+    {
+      "name": "entry.list",
+      "mode": "read"
+    },
+    {
+      "name": "entry.write",
+      "mode": "mutation"
+    },
+    {
+      "name": "entry.state",
+      "mode": "mutation"
+    },
+    {
+      "name": "entry.content",
+      "mode": "read"
+    },
+    {
+      "name": "layout.update",
+      "mode": "mutation"
+    },
+    {
+      "name": "module.update",
+      "mode": "mutation"
+    },
+    {
+      "name": "reader_settings.get",
+      "mode": "read"
+    },
+    {
+      "name": "reader_settings.update",
+      "mode": "mutation"
+    },
+    {
+      "name": "reader_counts.get",
+      "mode": "read"
+    },
+    {
+      "name": "reader_focus.get",
+      "mode": "read"
+    },
+    {
+      "name": "reader_focus.update",
+      "mode": "mutation"
+    },
+    {
+      "name": "reader_recommendation.read",
+      "mode": "read"
+    },
+    {
+      "name": "reader_digest.read",
+      "mode": "read"
+    },
+    {
+      "name": "reader_digest.apply",
+      "mode": "mutation"
+    },
+    {
+      "name": "focus_space.get",
+      "mode": "read"
+    },
+    {
+      "name": "focus_space.update",
+      "mode": "mutation"
+    },
+    {
+      "name": "focus_attachment.import",
+      "mode": "mutation"
+    },
+    {
+      "name": "focus_analysis.read",
+      "mode": "read"
+    },
+    {
+      "name": "focus_analysis.apply",
+      "mode": "mutation"
+    },
+    {
+      "name": "focus_analysis.get",
+      "mode": "read"
+    },
+    {
+      "name": "focus_result.feedback",
+      "mode": "mutation"
+    },
+    {
+      "name": "focus_blueprint.get",
+      "mode": "read"
+    },
+    {
+      "name": "focus_blueprint.preview",
+      "mode": "mutation"
+    },
+    {
+      "name": "focus_blueprint.apply",
+      "mode": "mutation"
+    },
+    {
+      "name": "focus_blueprint.rollback",
+      "mode": "mutation"
+    },
+    {
+      "name": "focus_work_product.get",
+      "mode": "read"
+    },
+    {
+      "name": "focus_work_product.feedback",
+      "mode": "mutation"
+    },
+    {
+      "name": "focus_work_product.link",
+      "mode": "mutation"
+    },
+    {
+      "name": "decision_run.start",
+      "mode": "mutation"
+    },
+    {
+      "name": "decision_run.get",
+      "mode": "read"
+    },
+    {
+      "name": "decision_run.answer",
+      "mode": "mutation"
+    },
+    {
+      "name": "decision_run.resume",
+      "mode": "mutation"
+    },
+    {
+      "name": "decision_run.cancel",
+      "mode": "mutation"
+    },
+    {
+      "name": "decision_revision.apply",
+      "mode": "mutation"
+    },
+    {
+      "name": "decision_revision.get",
+      "mode": "read"
+    },
+    {
+      "name": "decision_revision.compare",
+      "mode": "read"
+    },
+    {
+      "name": "decision_feedback.apply",
+      "mode": "mutation"
+    },
+    {
+      "name": "decision_review.apply",
+      "mode": "mutation"
+    },
+    {
+      "name": "recording.list",
+      "mode": "read"
+    },
+    {
+      "name": "recording.get",
+      "mode": "read"
+    },
+    {
+      "name": "settings.get",
+      "mode": "read"
+    },
+    {
+      "name": "settings.update",
+      "mode": "mutation"
+    },
+    {
+      "name": "source.list",
+      "mode": "read"
+    },
+    {
+      "name": "source.create",
+      "mode": "mutation"
+    },
+    {
+      "name": "source.update",
+      "mode": "mutation"
+    },
+    {
+      "name": "source.preview",
+      "mode": "read"
+    },
+    {
+      "name": "discovery.create",
+      "mode": "mutation"
+    },
+    {
+      "name": "discovery.confirm",
+      "mode": "mutation"
+    },
+    {
+      "name": "subscription.list",
+      "mode": "read"
+    },
+    {
+      "name": "subscription.set",
+      "mode": "mutation"
+    }
+  ],
+  "acceptance": [
+    "应用列表独立打开",
+    "文章摘要保存后再次读取不重复调用 AI",
+    "会议访问必须显式授权",
+    "升级保留应用 slug 与 data/"
+  ]
+}

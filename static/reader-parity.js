@@ -2796,12 +2796,26 @@
   function articleAIOverviewErrorMessage(errorCode) {
     switch (text(errorCode)) {
       case "ai_unavailable":
-        return readerFocusCopy("设备 AI 服务暂时不可用，请确认设备已联网并运行 AI 服务后重试。", "The device AI service is unavailable. Check the network and AI service, then try again.");
+        return readerFocusCopy("应用 AI 能力暂不可用，请确认已启用 AI 且设备在线。原文仍可阅读。", "App AI is unavailable. Check that AI is enabled and the device is online. You can still read the article.");
+      case "ai_credits_insufficient":
+        return readerFocusCopy("AI 额度不足，本次未完成。原文仍可阅读。", "Insufficient AI credits. You can still read the article.");
+      case "ai_busy":
+      case "ai_rate_limited":
+        return readerFocusCopy("AI 正忙，请稍后手动重试。", "AI is busy. Try again manually later.");
+      case "ai_timeout":
+        return readerFocusCopy("本次 AI 处理超时，未自动重试。", "This AI request timed out and was not automatically retried.");
+      case "ai_input_too_large":
+        return readerFocusCopy("文章超过本次 AI 处理长度上限，原文仍可阅读。", "The article exceeds the AI input limit. You can still read it.");
+      case "ai_content_blocked":
+      case "ai_forbidden":
+        return readerFocusCopy("本次内容无法进行 AI 处理。", "AI processing is unavailable for this content.");
       case "article_content_unavailable":
         return readerFocusCopy("这篇文章暂时没有可供分析的正文或摘要，请稍后重试。", "This article has no body or summary available for analysis. Try again later.");
       case "article_changed":
         return readerFocusCopy("文章内容刚刚更新，请重新打开文章后重试。", "The article changed just now. Reopen it and try again.");
       case "invalid_response":
+      case "ai_invalid_response":
+      case "ai_upstream_error":
         return readerFocusCopy("AI 返回结果暂时不可用，请稍后重试。", "The AI result is temporarily unavailable. Try again later.");
       default:
         return readerFocusCopy("本次提炼没有完成。", "This extraction did not complete.");

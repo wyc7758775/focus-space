@@ -42,7 +42,7 @@ fi
 trap 'kill "$TUNNEL_PID" ${KEEPALIVE_PID:+"$KEEPALIVE_PID"} 2>/dev/null || true' EXIT
 
 echo "构建本机二进制..."
-( cd "$REPO_ROOT" && go build -o .dev-data/plaud-dev . )
+( cd "$REPO_ROOT" && go build -tags dev -o .dev-data/plaud-dev . )
 
 # .dev-env 里抄来的 base URL 全部指向 127.0.0.1:19090，同端口转发后原样可用；
 # device-data 桥的 loopback 强制校验不受影响。
